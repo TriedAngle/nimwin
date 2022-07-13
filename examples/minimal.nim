@@ -1,4 +1,4 @@
-import nimdow, unicode, times
+import nimwin, unicode, times
 
 proc main() =
   var eventLoop = EventLoop.init()

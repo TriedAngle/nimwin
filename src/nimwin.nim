@@ -1,7 +1,7 @@
-import nimdow/window
-import nimdow/events
-import nimdow/eventloop
-import nimdow/common
+import nimwin/window
+import nimwin/events
+import nimwin/eventloop
+import nimwin/common
 
 export common.Key
 export common.ElementState

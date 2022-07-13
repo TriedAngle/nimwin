@@ -1,5 +1,5 @@
 import unicode, unittest
-import nimdow/[window, eventloop, events, common]
+import nimwin/[window, eventloop, events, common]
 
 test "InputDefaults":
   var eventLoop = EventLoop.init()
@@ -18,7 +18,7 @@ test "InputDefaults":
       case event.kind:
       of KeyInput:
         let input = event.key
-        if w.id() == windowId and input.key == Key.Escape:
+        if w.id() == windowId and input.key == KeyEscape:
           controlFlow.setExit(1)
         echo input
       
