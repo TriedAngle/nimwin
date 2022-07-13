@@ -1,5 +1,5 @@
 <div align="center">
-  <h1> Nimdow </h1>
+  <h1> NimWin </h1>
   <p><b>Platform Agnostic Windowing Library</b> for Nim</p>
 </div>
 

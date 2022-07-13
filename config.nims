@@ -1,2 +1,2 @@
---gc:arc
---threads:on
+# --gc:arc
+# --threads:on
