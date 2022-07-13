@@ -13,41 +13,36 @@ type
     of WaitUntil: time: Time
     of ExitWithCode: code: int
 
-  SharedState* = object
+  SharedState* = ref object
     nextId*: int64
     windowHandleToId*: Table[WindowHandle, WindowId]
     eventQueue*: Channel[Event]
     redrawQueue*: Channel[WindowId]
 
   EventLoopWindowTarget* = ref object
-    shared*: ptr SharedState
+    shared*: SharedState
 
   EventLoop* = ref object
-    shared*: ptr SharedState
+    shared*: SharedState
 
   EventLoopCallback* = proc(event: Event, target: EventLoopWindowTarget, controlFlow: var ControlFlow)
 
 
-proc allocSharedState(): ptr SharedState =
-  result = cast[ptr SharedState](allocShared0(sizeOf(SharedState)))
+proc newSharedState(): SharedState =
+  new result
   result.nextId = 0
   result.eventQueue.open()
   result.redrawQueue.open()
 
-proc deallocSharedState(shared: ptr SharedState) =
+proc cleanUp(shared: SharedState) =
   shared.eventQueue.close()
   shared.redrawQueue.close()
-  reset(shared.nextId)
-  reset(shared.windowHandleToId)
-  reset(shared.eventQueue)
-  reset(shared.redrawQueue)
-  deallocShared(shared)
 
 
 proc init*(_: typedesc[EventLoop]): EventLoop =
   new result
 
-  result.shared = allocSharedState()
+  result.shared = newSharedState()
 
 
 proc newEventLoop*(): EventLoop =
@@ -67,7 +62,7 @@ proc setWaitUntil*(cf: var ControlFlow, time: Time) =
   cf.kind = WaitUntil
   cf.time = time
 
-proc setExit*(cf: var ControlFlow, code: int = 1) =
+proc setExit*(cf: var ControlFlow, code: int = 0) =
   cf.kind = ExitWithCode
   cf.code = code 
 
@@ -123,5 +118,7 @@ proc run*(el: EventLoop, callback: EventLoopCallback) =
   for handle, id in el.shared.windowHandleToId.pairs():
     glfw.destroyWindow(handle)
 
-  deallocSharedState(el.shared)
+  el.shared.cleanUp()
   glfw.terminate()
+
+  quit(code)

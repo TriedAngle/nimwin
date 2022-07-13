@@ -5,7 +5,7 @@ type
     windowId*: WindowId
     handle*: WindowHandle
     config*: WindowConfig
-    shared*: ptr SharedState
+    shared*: SharedState
 
   Window* = ref WindowObj
 
@@ -87,13 +87,11 @@ proc init*(_: typedesc[Window], eventLoop: EventLoop, config: WindowConfig): Win
   let id = WindowId(result.shared.nextId)
   result.windowId = id
   result.shared.windowHandleToId[result.handle] = id
-  
+
   result.shared.nextId += 1
-  echo "nextId (after creation): ", eventLoop.shared.nextId
   glfw.makeContextCurrent(result.handle)
 
-  let p = result.shared
-  echo "Pointer: ", cast[int](p)
+  let p = result.shared.addr
   glfw.setWindowUserPointer(result.handle, p)
 
   discard result.handle.setWindowCloseCallback(callbacks.glfwWindowCloseCallback)
