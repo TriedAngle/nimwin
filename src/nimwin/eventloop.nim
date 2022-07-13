@@ -13,38 +13,41 @@ type
     of WaitUntil: time: Time
     of ExitWithCode: code: int
 
-  SharedState* = ref object
+  SharedState* = object
+    nextId*: int64
+    windowHandleToId*: Table[WindowHandle, WindowId]
     eventQueue*: Channel[Event]
     redrawQueue*: Channel[WindowId]
-    windowHandleToId*: Table[WindowHandle, WindowId]
 
   EventLoopWindowTarget* = ref object
+    shared*: ptr SharedState
 
   EventLoop* = ref object
-    shared*: SharedState
+    shared*: ptr SharedState
 
   EventLoopCallback* = proc(event: Event, target: EventLoopWindowTarget, controlFlow: var ControlFlow)
 
-  GlfWCallBackGlobals* = ref object
-    eventQueue*: Channel[Event]
-    windowHandleToId*: Table[WindowHandle, WindowId]
 
-
-
-var glfwGlobals* = GlfWCallBackGlobals()
-
-proc newSharedState(): SharedState =
-  new result
-
+proc allocSharedState(): ptr SharedState =
+  result = cast[ptr SharedState](allocShared0(sizeOf(SharedState)))
+  result.nextId = 0
   result.eventQueue.open()
   result.redrawQueue.open()
+
+proc deallocSharedState(shared: ptr SharedState) =
+  shared.eventQueue.close()
+  shared.redrawQueue.close()
+  reset(shared.nextId)
+  reset(shared.windowHandleToId)
+  reset(shared.eventQueue)
+  reset(shared.redrawQueue)
+  deallocShared(shared)
+
 
 proc init*(_: typedesc[EventLoop]): EventLoop =
   new result
 
-  result.shared = newSharedState()
-
-  glfwGlobals.eventQueue.open()
+  result.shared = allocSharedState()
 
 
 proc newEventLoop*(): EventLoop =
@@ -91,9 +94,7 @@ proc run*(el: EventLoop, callback: EventLoopCallback) =
 
   while true:
     while true:
-      var (eventAvailable, event) = glfwGlobals.eventQueue.tryRecv()
-      if not eventAvailable:
-        (eventAvailable, event) = el.shared.eventQueue.tryRecv()
+      let (eventAvailable, event) = el.shared.eventQueue.tryRecv()
       if not eventAvailable: break
       result = singleIter(event, controlFlow)
       if result.exit.isSome(): break 
@@ -122,4 +123,5 @@ proc run*(el: EventLoop, callback: EventLoopCallback) =
   for handle, id in el.shared.windowHandleToId.pairs():
     glfw.destroyWindow(handle)
 
+  deallocSharedState(el.shared)
   glfw.terminate()

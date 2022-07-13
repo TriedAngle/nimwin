@@ -12,6 +12,9 @@ type
   PhysicalPosition*[T] = object
     x*, y*: T
 
+  PhysicalSize*[T] = object
+    width*, height*: T
+
   MouseButtonKind* {.pure.} = enum
     Left
     Right
@@ -36,9 +39,6 @@ type
     button*: MouseButton
     state*: ElementState
     mods*: set[ModifierKey]
-
-var
-  windowIdCounter* = 0.int64
 
 proc `==`*(w1, w2: WindowId): bool {.borrow.}
 

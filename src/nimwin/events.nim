@@ -12,6 +12,15 @@ type
     LoopDestroyed
 
   WindowEventKind* {.pure.} = enum
+    # Window
+    WindowDestroyed
+    WindowCloseRequested
+    WindowResized
+    WindowScaleChange
+    WindowMoved
+    WindowMaximized
+    WindowFocused
+    # Input
     KeyInput
     CharInput
     MouseMoved
@@ -19,9 +28,21 @@ type
     MouseInput
     MouseScroll
     FilesDrop
+    
 
   WindowEvent* = object
     case kind*: WindowEventKind
+    of WindowDestroyed, WindowCloseRequested: discard
+    of WindowResized: 
+      size*: PhysicalSize[int32]
+    of WindowScaleChange:
+      scale*: PhysicalSize[float]
+    of WindowMoved: 
+      move*: PhysicalPosition[int32]
+    of WindowMaximized:
+      max*: bool
+    of WindowFocused:
+      focus*: bool
     of KeyInput:
       key*: KeyboardInput
     of CharInput:

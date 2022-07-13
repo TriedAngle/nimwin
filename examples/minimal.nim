@@ -22,19 +22,19 @@ proc main() =
         if w.id() == windowId and input.key == KeyEscape:
           echo "exit!"
           controlFlow.setExit()
+        echo input
       else: discard
 
     of MainEventsCleared:
       w.requestRedraw()
-      # echo "events done"
-
+    
     of RedrawRequested:
       # Render code here
       discard
     of RedrawEventsCleared:
       # optional render cleanup here ?
       let now = now()
-      echo start.between(now)
+      # echo start.between(now)
       start = now
       discard
     of LoopDestroyed:

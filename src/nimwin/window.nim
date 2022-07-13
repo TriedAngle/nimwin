@@ -5,7 +5,7 @@ type
     windowId*: WindowId
     handle*: WindowHandle
     config*: WindowConfig
-    shared*: SharedState
+    shared*: ptr SharedState
 
   Window* = ref WindowObj
 
@@ -84,13 +84,24 @@ proc init*(_: typedesc[Window], eventLoop: EventLoop, config: WindowConfig): Win
   let monitorHandle = if config.fullscreenMonitor.isSome(): config.fullscreenMonitor.get().handle else: nil
 
   result.handle = glfw.createWindow(config.size.w, config.size.h, cstring(config.title), monitorHandle, shareHandle)
-  let id = WindowId(windowIdCounter)
+  let id = WindowId(result.shared.nextId)
   result.windowId = id
   result.shared.windowHandleToId[result.handle] = id
-  glfwGlobals.windowHandleToId[result.handle] = id
-  windowIdCounter += 1
-
+  
+  result.shared.nextId += 1
+  echo "nextId (after creation): ", eventLoop.shared.nextId
   glfw.makeContextCurrent(result.handle)
+
+  let p = result.shared
+  echo "Pointer: ", cast[int](p)
+  glfw.setWindowUserPointer(result.handle, p)
+
+  discard result.handle.setWindowCloseCallback(callbacks.glfwWindowCloseCallback)
+  discard result.handle.setWindowPosCallback(callbacks.glfwWindowMoveCallback)
+  discard result.handle.setWindowSizeCallback(callbacks.glfwWindowResizeCallback)
+  discard result.handle.setWindowContentScaleCallback(callbacks.glfwWindowScaleCallback)
+  discard result.handle.setWindowMaximizeCallback(callbacks.glfwWindowMaximizeCallback)
+  discard result.handle.setWindowFocusCallback(callbacks.glfwWindowFocusCallback)
 
   discard result.handle.setMouseButtonCallback(callbacks.glfwMouseButtonCallback)
   discard result.handle.setCursorPosCallback(callbacks.glfwMouseMovedCallback)
@@ -99,6 +110,7 @@ proc init*(_: typedesc[Window], eventLoop: EventLoop, config: WindowConfig): Win
   discard result.handle.setKeyCallback(callbacks.glfwKeyCallback)
   discard result.handle.setCharModsCallback(callbacks.glfwCharCallback)
   discard result.handle.setDropCallback(callbacks.glfwFilesDropCallback)
+
 
 
 proc build*(builder: WindowBuilder, eventLoop: EventLoop): Window =
