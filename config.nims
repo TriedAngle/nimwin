@@ -1,0 +1,2 @@
+--gc:arc
+--threads:on
