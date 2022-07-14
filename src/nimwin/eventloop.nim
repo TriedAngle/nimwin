@@ -69,7 +69,8 @@ proc setExit*(cf: var ControlFlow, code: int = 0) =
 proc run*(el: EventLoop, callback: EventLoopCallback) =
   type IterResult = object
     exit: Option[int]
-  proc singleIter(event: Event, cf: var ControlFlow): IterResult =
+
+  proc singleIter(event: Event, target: EventLoopWindowTarget, cf: var ControlFlow): IterResult =
     case cf.kind:
     of ExitWithCode:
       result.exit = some cf.code
@@ -83,6 +84,9 @@ proc run*(el: EventLoop, callback: EventLoopCallback) =
     callback(event, nil, cf)
 
 
+  var target = new EventLoopWindowTarget
+  target.shared = el.shared
+
   var controlFlow = newControlFlow()
   var code: int
   var result: IterResult
@@ -91,26 +95,37 @@ proc run*(el: EventLoop, callback: EventLoopCallback) =
     while true:
       let (eventAvailable, event) = el.shared.eventQueue.tryRecv()
       if not eventAvailable: break
-      result = singleIter(event, controlFlow)
+      result = singleIter(event, target, controlFlow)
       if result.exit.isSome(): break 
 
     if result.exit.isSome():
       code = result.exit.get() 
       break
       
-    el.shared.eventQueue.send(Event(kind: MainEventsCleared))
-
-    while true:
-      let (redrawAvailable, redrawEvent) = el.shared.redrawQueue.tryRecv()
-      if not redrawAvailable: break
-      result = singleIter(Event(kind: RedrawRequested, redrawWindowId: redrawEvent), controlFlow)
-      if result.exit.isSome(): break 
+    result = singleIter(Event(kind: MainEventsCleared), target, controlFlow)
 
     if result.exit.isSome():
       code = result.exit.get() 
       break
+      
 
-    el.shared.eventQueue.send(Event(kind: RedrawEventsCleared))
+    while true:
+      let (redrawAvailable, redrawEvent) = el.shared.redrawQueue.tryRecv()
+      if not redrawAvailable: break
+      result = singleIter(Event(kind: RedrawRequested, redrawWindowId: redrawEvent), target, controlFlow)
+      for handle, id in target.shared.windowHandleToId.pairs():
+        handle.swapBuffers()
+      if result.exit.isSome(): break 
+
+    if result.exit.isSome():
+      code = result.exit.get()
+      break
+
+    let result = singleIter(Event(kind: RedrawEventsCleared), target, controlFlow)
+
+    if result.exit.isSome():
+      code = result.exit.get() 
+      break
     
   
   callback(Event(kind: LoopDestroyed), nil, controlFlow)

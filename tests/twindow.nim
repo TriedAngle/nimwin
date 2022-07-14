@@ -41,6 +41,6 @@ test "InputDefaults":
 
       of FilesDrop:
         echo event.paths
-    
+      else: discard
     else: discard
   )

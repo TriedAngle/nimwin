@@ -1,4 +1,4 @@
-import nimwin, unicode, times
+import nimwin
 
 proc main() =
   var eventLoop = EventLoop.init()
@@ -6,8 +6,6 @@ proc main() =
   var w = Window.builder()
     .withConfig(DefaultWindowConfig(transparentFramebuffer = true))
     .build(eventLoop)
-
-  var start = now()
 
   eventLoop.run(proc(event: Event, target: EventLoopWindowTarget, controlFlow: var ControlFlow) =
     controlFlow.setPoll()
@@ -30,12 +28,6 @@ proc main() =
     
     of RedrawRequested:
       # Render code here
-      discard
-    of RedrawEventsCleared:
-      # optional render cleanup here ?
-      let now = now()
-      # echo start.between(now)
-      start = now
       discard
     of LoopDestroyed:
       echo "byebye!"

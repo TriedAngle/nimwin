@@ -609,7 +609,7 @@ macro generateProcs() =
     proc swapInterval*(interval: int32)
     proc extensionSupported*(extension: cstring): int32
     proc getProcAddress*(procname: cstring): GLFWGlProc
-    proc vulkanSupported*(): int32
+    proc vulkanSupported*(): bool
     proc getRequiredInstanceExtensions*(count: ptr uint32): cstringArray
     when defined(VK_VERSION_1_0):
       proc getInstanceProcAddress*(instance: VkInstance; procname: cstring): GLFWVkProc
